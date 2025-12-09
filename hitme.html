@@ -2,41 +2,43 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Shooter Foto + Suara</title>
+<title>Shooter Foto</title>
+
 <style>
     body {
         margin: 0;
         overflow: hidden;
         background: #111;
-        font-family: Arial;
+        font-family: Arial, sans-serif;
     }
 
+    /* Target foto */
     #target {
         position: absolute;
         width: 200px;
-        transition: transform 0.2s ease, opacity 0.4s ease;
         cursor: pointer;
+        transition: transform 0.2s ease, opacity 0.4s ease;
     }
 
-    /* Efek hancur */
+    /* Animasi kena tembak */
     .hit {
         animation: shake 0.2s ease, fadeout 0.5s forwards ease;
     }
 
     @keyframes shake {
-        0% { transform: translate(0px, 0px) rotate(0deg); }
-        25% { transform: translate(-10px, 5px) rotate(-5deg); }
-        50% { transform: translate(10px, -5px) rotate(5deg); }
-        75% { transform: translate(-5px, -10px) rotate(2deg); }
-        100% { transform: translate(0px, 0px) rotate(0deg); }
+        0% { transform: translate(0,0) rotate(0); }
+        25% { transform: translate(-10px,5px) rotate(-5deg); }
+        50% { transform: translate(10px,-5px) rotate(5deg); }
+        75% { transform: translate(-5px,-10px) rotate(2deg); }
+        100% { transform: translate(0,0) rotate(0); }
     }
 
     @keyframes fadeout {
-        0% { opacity: 1; }
-        100% { opacity: 0; transform: scale(0); }
+        from { opacity: 1; transform: scale(1); }
+        to { opacity: 0; transform: scale(0); }
     }
 
-    /* Peluru */
+    /* Peluru “piu” */
     .bullet {
         position: absolute;
         width: 8px;
@@ -48,20 +50,20 @@
     }
 
     @keyframes fly {
-        from { transform: translateY(0); }
+        from { transform: translateY(0); opacity: 1; }
         to { transform: translateY(-500px); opacity: 0; }
     }
 </style>
 </head>
 <body>
 
-<!-- Target Foto -->
-<img id="target" src=<img id="target" src="img/muka.jpg">
+<!-- Fotomu (di root repo, sejajar index.html) -->
+<img id="target" src="muka.jpg">
 
 <!-- Suara tembakan -->
 <audio id="gunshot" src="https://cdn.pixabay.com/audio/2022/03/15/audio_0e29c213ae.mp3"></audio>
 
-<!-- Efek “piu” -->
+<!-- Suara piu -->
 <audio id="piu" src="https://cdn.pixabay.com/audio/2022/03/15/audio_ae7d4d5f7a.mp3"></audio>
 
 <script>
@@ -69,7 +71,7 @@ const target = document.getElementById("target");
 const soundGun = document.getElementById("gunshot");
 const soundPiu = document.getElementById("piu");
 
-// Random posisi target
+// Posisi acak target
 function randomPosition() {
     const x = Math.random() * (window.innerWidth - 200);
     const y = Math.random() * (window.innerHeight - 200);
@@ -87,20 +89,24 @@ window.addEventListener("click", function(e) {
     soundPiu.currentTime = 0;
     soundPiu.play();
 
-    // Spawn peluru
+    // Buat peluru
     const bullet = document.createElement("div");
     bullet.className = "bullet";
     bullet.style.left = e.clientX + "px";
     bullet.style.top = e.clientY + "px";
     document.body.appendChild(bullet);
-
     setTimeout(() => bullet.remove(), 300);
 
-    // Cek hit target
+    // Cek apakah klik kena target
     const rect = target.getBoundingClientRect();
-    if (e.clientX >= rect.left && e.clientX <= rect.right &&
-        e.clientY >= rect.top && e.clientY <= rect.bottom) {
 
+    const hit =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+
+    if (hit) {
         target.classList.add("hit");
 
         setTimeout(() => {
