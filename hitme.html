@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Shooter Foto + Suara</title>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: #111;
+        font-family: Arial;
+    }
+
+    #target {
+        position: absolute;
+        width: 200px;
+        transition: transform 0.2s ease, opacity 0.4s ease;
+        cursor: pointer;
+    }
+
+    /* Efek hancur */
+    .hit {
+        animation: shake 0.2s ease, fadeout 0.5s forwards ease;
+    }
+
+    @keyframes shake {
+        0% { transform: translate(0px, 0px) rotate(0deg); }
+        25% { transform: translate(-10px, 5px) rotate(-5deg); }
+        50% { transform: translate(10px, -5px) rotate(5deg); }
+        75% { transform: translate(-5px, -10px) rotate(2deg); }
+        100% { transform: translate(0px, 0px) rotate(0deg); }
+    }
+
+    @keyframes fadeout {
+        0% { opacity: 1; }
+        100% { opacity: 0; transform: scale(0); }
+    }
+
+    /* Peluru */
+    .bullet {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        background: white;
+        border-radius: 50%;
+        pointer-events: none;
+        animation: fly 0.25s linear forwards;
+    }
+
+    @keyframes fly {
+        from { transform: translateY(0); }
+        to { transform: translateY(-500px); opacity: 0; }
+    }
+</style>
+</head>
+<body>
+
+<!-- Target Foto -->
+<img id="target" src=<img id="target" src="img/muka.jpg">
+
+<!-- Suara tembakan -->
+<audio id="gunshot" src="https://cdn.pixabay.com/audio/2022/03/15/audio_0e29c213ae.mp3"></audio>
+
+<!-- Efek “piu” -->
+<audio id="piu" src="https://cdn.pixabay.com/audio/2022/03/15/audio_ae7d4d5f7a.mp3"></audio>
+
+<script>
+const target = document.getElementById("target");
+const soundGun = document.getElementById("gunshot");
+const soundPiu = document.getElementById("piu");
+
+// Random posisi target
+function randomPosition() {
+    const x = Math.random() * (window.innerWidth - 200);
+    const y = Math.random() * (window.innerHeight - 200);
+    target.style.left = x + "px";
+    target.style.top = y + "px";
+}
+randomPosition();
+
+window.addEventListener("click", function(e) {
+
+    // Mainkan suara
+    soundGun.currentTime = 0;
+    soundGun.play();
+
+    soundPiu.currentTime = 0;
+    soundPiu.play();
+
+    // Spawn peluru
+    const bullet = document.createElement("div");
+    bullet.className = "bullet";
+    bullet.style.left = e.clientX + "px";
+    bullet.style.top = e.clientY + "px";
+    document.body.appendChild(bullet);
+
+    setTimeout(() => bullet.remove(), 300);
+
+    // Cek hit target
+    const rect = target.getBoundingClientRect();
+    if (e.clientX >= rect.left && e.clientX <= rect.right &&
+        e.clientY >= rect.top && e.clientY <= rect.bottom) {
+
+        target.classList.add("hit");
+
+        setTimeout(() => {
+            target.classList.remove("hit");
+            target.style.opacity = 1;
+            target.style.transform = "scale(1)";
+            randomPosition();
+        }, 700);
+    }
+});
+</script>
+
+</body>
+</html>
