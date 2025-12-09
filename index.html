@@ -1,122 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Shooter Foto</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shoot The Image</title>
 
 <style>
     body {
         margin: 0;
         overflow: hidden;
         background: #111;
-        font-family: Arial, sans-serif;
+        height: 100vh;
+        width: 100vw;
+        cursor: crosshair;
+        user-select: none;
     }
 
-    /* Target foto */
-    #target {
+    /* Target image */
+    .target {
         position: absolute;
         width: 200px;
-        cursor: pointer;
-        transition: transform 0.2s ease, opacity 0.4s ease;
+        height: auto;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        transition: transform 0.1s;
     }
 
-    /* Animasi kena tembak */
+    /* Bullet flash */
+    .bullet {
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: yellow;
+        pointer-events: none;
+        animation: pop 0.2s linear forwards;
+    }
+
+    @keyframes pop {
+        0%   { transform: scale(1); opacity: 1; }
+        100% { transform: scale(3); opacity: 0; }
+    }
+
+    /* Hit flash animation */
     .hit {
-        animation: shake 0.2s ease, fadeout 0.5s forwards ease;
+        animation: shake 0.15s;
     }
 
     @keyframes shake {
-        0% { transform: translate(0,0) rotate(0); }
-        25% { transform: translate(-10px,5px) rotate(-5deg); }
-        50% { transform: translate(10px,-5px) rotate(5deg); }
-        75% { transform: translate(-5px,-10px) rotate(2deg); }
-        100% { transform: translate(0,0) rotate(0); }
-    }
-
-    @keyframes fadeout {
-        from { opacity: 1; transform: scale(1); }
-        to { opacity: 0; transform: scale(0); }
-    }
-
-    /* Peluru “piu” */
-    .bullet {
-        position: absolute;
-        width: 8px;
-        height: 8px;
-        background: white;
-        border-radius: 50%;
-        pointer-events: none;
-        animation: fly 0.25s linear forwards;
-    }
-
-    @keyframes fly {
-        from { transform: translateY(0); opacity: 1; }
-        to { transform: translateY(-500px); opacity: 0; }
+        0%   { transform: translate(-50%, -50%) rotate(0deg); }
+        25%  { transform: translate(-48%, -52%) rotate(-3deg); }
+        50%  { transform: translate(-50%, -50%) rotate(3deg); }
+        75%  { transform: translate(-52%, -48%) rotate(-2deg); }
+        100% { transform: translate(-50%, -50%) rotate(0deg); }
     }
 </style>
 </head>
+
 <body>
 
-<!-- Fotomu (di root repo, sejajar index.html) -->
-<img id="target" class="target" src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/muka.jpg">
-
-<!-- Suara tembakan -->
-<audio id="gunshot" src="https://cdn.pixabay.com/audio/2022/03/15/audio_0e29c213ae.mp3"></audio>
-
-<!-- Suara piu -->
-<audio id="piu" src="https://cdn.pixabay.com/audio/2022/03/15/audio_ae7d4d5f7a.mp3"></audio>
+<!-- Ganti URL gambar ini dengan link raw GitHub atau link manapun -->
+<img src="https://miyamurajo-bot.github.io/hit_me/muka.jpg" class="target" id="target">
 
 <script>
-const target = document.getElementById("target");
-const soundGun = document.getElementById("gunshot");
-const soundPiu = document.getElementById("piu");
+    const target = document.getElementById("target");
 
-// Posisi acak target
-function randomPosition() {
-    const x = Math.random() * (window.innerWidth - 200);
-    const y = Math.random() * (window.innerHeight - 200);
-    target.style.left = x + "px";
-    target.style.top = y + "px";
-}
-randomPosition();
-
-window.addEventListener("click", function(e) {
-
-    // Mainkan suara
-    soundGun.currentTime = 0;
-    soundGun.play();
-
-    soundPiu.currentTime = 0;
-    soundPiu.play();
-
-    // Buat peluru
-    const bullet = document.createElement("div");
-    bullet.className = "bullet";
-    bullet.style.left = e.clientX + "px";
-    bullet.style.top = e.clientY + "px";
-    document.body.appendChild(bullet);
-    setTimeout(() => bullet.remove(), 300);
-
-    // Cek apakah klik kena target
-    const rect = target.getBoundingClientRect();
-
-    const hit =
-        e.clientX >= rect.left &&
-        e.clientX <= rect.right &&
-        e.clientY >= rect.top &&
-        e.clientY <= rect.bottom;
-
-    if (hit) {
-        target.classList.add("hit");
-
-        setTimeout(() => {
-            target.classList.remove("hit");
-            target.style.opacity = 1;
-            target.style.transform = "scale(1)";
-            randomPosition();
-        }, 700);
+    // ---- SOUND ----
+    function playShoot() {
+        const audio = new Audio("https://actions.google.com/sounds/v1/impacts/punch_1.mp3");
+        audio.volume = 0.4;
+        audio.play();
     }
-});
+
+    // ---- BULLET EFFECT ----
+    function spawnBullet(x, y) {
+        const bullet = document.createElement("div");
+        bullet.className = "bullet";
+        bullet.style.left = x + "px";
+        bullet.style.top = y + "px";
+        document.body.appendChild(bullet);
+        setTimeout(() => bullet.remove(), 200);
+    }
+
+    // ---- HIT LOGIC ----
+    function shoot(e) {
+        const x = e.clientX;
+        const y = e.clientY;
+
+        spawnBullet(x, y);
+        playShoot();
+
+        // Cek apakah kena target
+        const rect = target.getBoundingClientRect();
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            target.classList.add("hit");
+
+            setTimeout(() => {
+                target.classList.remove("hit");
+            }, 150);
+        }
+    }
+
+    // ---- AUTO FIRE (Hold mouse) ----
+    let autoFire;
+    document.addEventListener("mousedown", (e) => {
+        shoot(e);
+        autoFire = setInterval(() => shoot(e), 15); // 15ms = super fast
+    });
+
+    document.addEventListener("mouseup", () => {
+        clearInterval(autoFire);
+    });
+
+    // Click once without holding also works
+    document.addEventListener("click", shoot);
+
 </script>
 
 </body>
