@@ -1,255 +1,177 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Laser & Gun Shoot Game</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Shoot The Image</title>
 
 <style>
     body {
         margin: 0;
-        background: #0d0d0d;
         overflow: hidden;
-        user-select: none;
+        background: #111;
+        height: 100vh;
+        width: 100vw;
         cursor: crosshair;
+        user-select: none;
+        font-family: Arial, sans-serif;
+        color: white;
+        text-align: center;
     }
 
-    #targetImage {
+    .title-box {
         position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 300px;
-        transform: translate(-50%, -50%);
+        top: 5%;
+        width: 100%;
+        text-align: center;
+        font-size: 22px;
+        line-height: 1.4;
+        text-shadow: 0 0 10px #000;
         pointer-events: none;
+    }
+
+    /* Target image */
+    .target {
+        position: absolute;
+        width: 200px;
+        height: auto;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
         transition: transform 0.1s;
+        -webkit-mask-image: none;
+        mask-image: none;
     }
 
-    /* Shake effect */
-    .shake {
-        animation: shakeAnim 0.15s;
-    }
-    @keyframes shakeAnim {
-        0% { transform: translate(-50%, -50%) rotate(0deg); }
-        25% { transform: translate(-48%, -52%) rotate(-3deg); }
-        50% { transform: translate(-50%, -50%) rotate(3deg); }
-        75% { transform: translate(-52%, -48%) rotate(-2deg); }
-        100%{ transform: translate(-50%, -50%) rotate(0deg); }
-    }
-
-    /* Laser line */
-    .laser {
-        position: absolute;
-        width: 3px;
-        background: red;
-        box-shadow: 0 0 15px red, 0 0 30px red;
-        transform-origin: top;
-    }
-
-    /* burn mark */
-    .burn {
-        position: absolute;
-        width: 5px;
-        background: rgba(50, 0, 0, 0.7);
-        filter: blur(2px);
-        transform-origin: top;
-    }
-
-    /* Sparks from laser drag */
-    .spark {
+    /* Bullet flash */
+    .bullet {
         position: absolute;
         width: 6px;
         height: 6px;
+        border-radius: 50%;
         background: yellow;
-        border-radius: 50%;
-        box-shadow: 0 0 10px yellow, 0 0 20px orange;
+        pointer-events: none;
+        animation: pop 0.2s linear forwards;
     }
 
-    /* Sparks from gun click */
-    .shootSpark {
-        position: absolute;
-        width: 10px;
-        height: 10px;
-        background: red;
-        border-radius: 50%;
-        box-shadow: 0 0 20px red, 0 0 40px orange;
-        pointer-events: none;
-        animation: shootSparkAnim 0.25s forwards;
-    }
-    @keyframes shootSparkAnim {
-        0% { transform: scale(1); opacity: 1; }
-        100%{ transform: scale(3); opacity: 0; }
+    @keyframes pop {
+        0%   { transform: scale(1); opacity: 1; }
+        100% { transform: scale(3); opacity: 0; }
     }
 
-    .piece {
-        position: absolute;
-        will-change: transform;
-        pointer-events: none;
+    .hit {
+        animation: shake 0.15s;
+    }
+
+    @keyframes shake {
+        0%   { transform: translate(-50%, -50%) rotate(0deg); }
+        25%  { transform: translate(-48%, -52%) rotate(-3deg); }
+        50%  { transform: translate(-50%, -50%) rotate(3deg); }
+        75%  { transform: translate(-52%, -48%) rotate(-2deg); }
+        100% { transform: translate(-50%, -50%) rotate(0deg); }
     }
 </style>
 </head>
+
 <body>
 
-<img id="targetImage" src="https://miyamurajo-bot.github.io/hit_me/muka.jpg">
+<div class="title-box">
+    <div>hit ur fineshytt if u are mad</div>
+    <div>sentuh untuk tembk bijinya</div>
+    <div>sentuh seret untuk menggunakan laser biji</div>
+</div>
 
-<!-- Sounds -->
-<audio id="laserSound" src="https://raw.githubusercontent.com/miyamurajo-bot/raw/hit_me/billy-idol-rebel-yell-guitar-track.mp3"></audio>
-<audio id="bgm" src="https://raw.githubusercontent.com/miyamurajo-bot/raw/hit_me/game-gaming-minecraft-background-music-377647.mp3" loop></audio>
+<img src="https://miyamurajo-bot.github.io/hit_me/muka.jpg" class="target" id="target">
 
 <script>
-const img = document.getElementById("targetImage");
-const laserSound = document.getElementById("laserSound");
-const bgm = document.getElementById("bgm");
+    const target = document.getElementById("target");
 
-bgm.volume = 0.4;
-bgm.play().catch(()=>{});
-
-let isDragging = false;
-let lastX = 0, lastY = 0;
-let sliced = false;
-
-/* =======================================
-   SHOOT BULLET SPARK (KLIK)
-======================================= */
-document.addEventListener("click", (e) => {
-    spawnShootSpark(e.clientX, e.clientY);
-
-    if (isHit(e.clientX, e.clientY)) {
-        shakeImage();
-    }
-});
-function spawnShootSpark(x, y) {
-    const s = document.createElement("div");
-    s.className = "shootSpark";
-    s.style.left = (x - 5) + "px";
-    s.style.top = (y - 5) + "px";
-    document.body.appendChild(s);
-    setTimeout(() => s.remove(), 250);
-}
-
-/* =======================================
-   DRAG LASER
-======================================= */
-document.addEventListener("mousedown", e => {
-    isDragging = true;
-    lastX = e.clientX;
-    lastY = e.clientY;
-
-    laserSound.currentTime = 0;
-    laserSound.play();
-
-    spawnLaser(lastX, lastY, lastX, lastY);
-});
-document.addEventListener("mousemove", e => {
-    if (!isDragging) return;
-
-    const x2 = e.clientX, y2 = e.clientY;
-
-    spawnLaser(lastX, lastY, x2, y2);
-    spawnSpark(x2, y2);
-
-    if (isHit(x2, y2)) {
-        shakeImage();
-        sliceImage();
+    // SOUND
+    function playShoot() {
+        const audio = new Audio("https://raw.githubusercontent.com/miyamurajo-bot/hit_me/raw/main/m4a1_single-kibblesbob-8540445.mp3");
+        audio.type = "audio/mpeg";
+        audio.volume = 0.4;
+        audio.play().catch(e => console.log("Audio blocked:", e));
     }
 
-    lastX = x2;
-    lastY = y2;
-});
-document.addEventListener("mouseup", () => {
-    isDragging = false;
-});
-
-/* =======================================
-   UTILITIES
-======================================= */
-function spawnLaser(x1, y1, x2, y2) {
-    const dx = x2 - x1, dy = y2 - y1;
-    const len = Math.sqrt(dx*dx + dy*dy);
-    const ang = Math.atan2(dy, dx) * 180 / Math.PI;
-
-    let L = document.createElement("div");
-    L.className = "laser";
-    L.style.left = x1 + "px";
-    L.style.top = y1 + "px";
-    L.style.width = len + "px";
-    L.style.transform = `rotate(${ang}deg)`;
-    document.body.appendChild(L);
-    setTimeout(() => L.remove(), 120);
-
-    let B = document.createElement("div");
-    B.className = "burn";
-    B.style.left = x1 + "px";
-    B.style.top = y1 + "px";
-    B.style.width = len + "px";
-    B.style.transform = `rotate(${ang}deg)`;
-    document.body.appendChild(B);
-    setTimeout(() => B.remove(), 500);
-}
-
-function spawnSpark(x, y) {
-    const s = document.createElement("div");
-    s.className = "spark";
-    s.style.left = x + "px";
-    s.style.top = y + "px";
-    document.body.appendChild(s);
-
-    const dx = (Math.random()-0.5) * 30;
-    const dy = (Math.random()-0.5) * 30;
-    setTimeout(() => {
-        s.style.transition = "0.2s";
-        s.style.transform = `translate(${dx}px, ${dy}px)`;
-        s.style.opacity = 0;
-    }, 10);
-    setTimeout(() => s.remove(), 250);
-}
-
-function isHit(x, y) {
-    const r = img.getBoundingClientRect();
-    return (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom);
-}
-
-function shakeImage() {
-    img.classList.add("shake");
-    setTimeout(()=> img.classList.remove("shake"),150);
-}
-
-/* =======================================
-   SLICE MODE 2 (PECAH BANYAK)
-======================================= */
-function sliceImage() {
-    if (sliced) return;
-    sliced = true;
-
-    const rect = img.getBoundingClientRect();
-    img.style.display = "none";
-
-    const pieces = 7;
-    for (let i = 0; i < pieces; i++) {
-        const p = document.createElement("img");
-        p.src = img.src;
-        p.className = "piece";
-
-        p.style.width = "70px";
-        p.style.height = "70px";
-        p.style.clipPath = "circle(35px)";
-        p.style.left = rect.left + Math.random()*rect.width + "px";
-        p.style.top  = rect.top  + Math.random()*rect.height + "px";
-
-        document.body.appendChild(p);
-
-        const dx = (Math.random()-0.5)*300;
-        const dy = Math.random()*500 + 200;
-        const rot= (Math.random()-0.5)*360;
-
-        setTimeout(()=>{
-            p.style.transition = "1.8s ease-out";
-            p.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg)`;
-            p.style.opacity = 0;
-        },50);
-
-        setTimeout(()=> p.remove(), 2000);
+    // BULLET EFFECT
+    function spawnBullet(x, y) {
+        const bullet = document.createElement("div");
+        bullet.className = "bullet";
+        bullet.style.left = x + "px";
+        bullet.style.top = y + "px";
+        document.body.appendChild(bullet);
+        setTimeout(() => bullet.remove(), 200);
     }
-}
+
+    // SHOOT LOGIC
+    function shoot(e) {
+        const x = e.clientX;
+        const y = e.clientY;
+
+        spawnBullet(x, y);
+        playShoot();
+
+        const rect = target.getBoundingClientRect();
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            target.classList.add("hit");
+            setTimeout(() => target.classList.remove("hit"), 150);
+        }
+    }
+
+    // AUTO FIRE HOLD
+    let autoFire;
+    document.addEventListener("mousedown", (e) => {
+        shoot(e);
+        autoFire = setInterval(() => shoot(e), 15);
+    });
+    document.addEventListener("mouseup", () => clearInterval(autoFire));
+    document.addEventListener("click", shoot);
+
+    // ===== LASER CUTTING SYSTEM =====
+
+    let isLaser = false;
+    let laserPath = "";  // SVG path untuk mask
+
+    function updateLaserMask() {
+        target.style.webkitMaskImage = `path("${laserPath}")`;
+        target.style.maskImage = `path("${laserPath}")`;
+    }
+
+    document.addEventListener("touchstart", startLaser);
+    document.addEventListener("touchmove", drawLaser);
+    document.addEventListener("touchend", endLaser);
+
+    document.addEventListener("mousedown", startLaser);
+    document.addEventListener("mousemove", drawLaser);
+    document.addEventListener("mouseup", endLaser);
+
+    function startLaser(e) {
+        const x = (e.touches ? e.touches[0].clientX : e.clientX);
+        const y = (e.touches ? e.touches[0].clientY : e.clientY);
+
+        const rect = target.getBoundingClientRect();
+        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+            isLaser = true;
+            laserPath = `M ${x} ${y}`;
+            updateLaserMask();
+        }
+    }
+
+    function drawLaser(e) {
+        if (!isLaser) return;
+
+        const x = (e.touches ? e.touches[0].clientX : e.clientX);
+        const y = (e.touches ? e.touches[0].clientY : e.clientY);
+
+        laserPath += ` L ${x} ${y}`;
+        updateLaserMask();
+    }
+
+    function endLaser() {
+        isLaser = false;
+    }
 </script>
+
 </body>
 </html>
