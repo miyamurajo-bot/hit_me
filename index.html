@@ -319,6 +319,25 @@
             color: white;
             font-size: 1.2rem;
             z-index: 5;
+            text-align: center;
+            width: 100%;
+            padding: 20px;
+        }
+        
+        .load-progress {
+            width: 80%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            margin: 10px auto;
+            overflow: hidden;
+        }
+        
+        .load-progress-bar {
+            height: 100%;
+            background: linear-gradient(to right, #ff4757, #ffa502);
+            width: 0%;
+            transition: width 0.3s;
         }
         
         .fallback-image {
@@ -328,18 +347,30 @@
             object-fit: cover;
         }
         
-        .audio-status {
+        .debug-info {
             position: fixed;
-            bottom: 100px;
-            right: 20px;
+            top: 10px;
+            left: 10px;
             background: rgba(0, 0, 0, 0.7);
             padding: 10px;
-            border-radius: 10px;
-            border: 2px solid #70a1ff;
+            border-radius: 5px;
             font-size: 0.8rem;
-            max-width: 200px;
-            z-index: 99;
+            z-index: 1000;
+            color: #70a1ff;
             display: none;
+        }
+        
+        .debug-toggle {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            z-index: 1001;
         }
         
         @media (max-width: 768px) {
@@ -371,16 +402,13 @@
                 align-items: center;
                 gap: 10px;
             }
-            
-            .audio-status {
-                bottom: 80px;
-                font-size: 0.7rem;
-                max-width: 150px;
-            }
         }
     </style>
 </head>
 <body>
+    <button class="debug-toggle" id="debugToggle">Debug</button>
+    <div class="debug-info" id="debugInfo"></div>
+    
     <div class="container">
         <header>
             <h1>Hit Me When You Are Mad, Fineshytt</h1>
@@ -408,16 +436,14 @@
             </div>
             
             <div class="photo-container" id="photoContainer">
-                <div class="image-loading" id="imageLoading">Memuat foto...</div>
-                <img src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/muka.jpg" 
-                     alt="Target" 
-                     class="target-photo" 
-                     id="targetPhoto"
-                     onerror="loadFallbackImage()">
-                <img src="https://i.imgur.com/7QcIY9j.jpg" 
-                     alt="Fallback Target" 
-                     class="fallback-image" 
-                     id="fallbackImage">
+                <div class="image-loading" id="imageLoading">
+                    <div>Memuat foto...</div>
+                    <div class="load-progress">
+                        <div class="load-progress-bar" id="loadProgressBar"></div>
+                    </div>
+                    <div id="loadStatus">Menginisialisasi...</div>
+                </div>
+                <!-- Gambar akan dimuat via JavaScript -->
             </div>
         </div>
         
@@ -448,7 +474,6 @@
         </div>
         
         <div class="audio-controls">
-            <div class="audio-status" id="audioStatus">Status audio akan muncul di sini</div>
             <button class="audio-btn active" id="bgMusicBtn">
                 <i class="fas fa-music"></i>
             </button>
@@ -457,91 +482,42 @@
             </button>
         </div>
     </div>
-    
-    <!-- Audio elements -->
-    <audio id="bulletSound" preload="auto">
-        <!-- Sumber utama -->
-        <source src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/m4a1_single-kibblesbob-8540445.mp3" type="audio/mpeg">
-        <!-- Alternatif 1: URL tanpa /raw -->
-        <source src="https://github.com/miyamurajo-bot/hit_me/raw/main/m4a1_single-kibblesbob-8540445.mp3" type="audio/mpeg">
-        <!-- Alternatif 2: File audio dari sumber lain -->
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-gun-pistol-shot-1669.mp3" type="audio/mpeg">
-        <!-- Alternatif 3: Audio placeholder -->
-        <source src="https://www.soundjay.com/buttons/beep-07.wav" type="audio/wav">
-    </audio>
-    
-    <audio id="laserSound" preload="auto">
-        <!-- Sumber utama -->
-        <source src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/billy-idol-rebel-yell-guitar-track.mp3" type="audio/mpeg">
-        <!-- Alternatif 1: URL tanpa /raw -->
-        <source src="https://github.com/miyamurajo-bot/hit_me/raw/main/billy-idol-rebel-yell-guitar-track.mp3" type="audio/mpeg">
-        <!-- Alternatif 2: File audio dari sumber lain -->
-        <source src="https://assets.mixkit.co/sfx/preview/mixkit-laser-gun-shot-1678.mp3" type="audio/mpeg">
-        <!-- Alternatif 3: Audio placeholder -->
-        <source src="https://www.soundjay.com/buttons/beep-08.wav" type="audio/wav">
-    </audio>
-    
-    <audio id="backgroundMusic" loop preload="auto">
-        <!-- Sumber utama -->
-        <source src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/game-gaming-minecraft-background-music-377647.mp3" type="audio/mpeg">
-        <!-- Alternatif 1: URL tanpa /raw -->
-        <source src="https://github.com/miyamurajo-bot/hit_me/raw/main/game-gaming-minecraft-background-music-377647.mp3" type="audio/mpeg">
-        <!-- Alternatif 2: File audio dari sumber lain -->
-        <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3" type="audio/mpeg">
-        <!-- Alternatif 3: Musik game lain -->
-        <source src="https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3" type="audio/mpeg">
-    </audio>
 
     <script>
-        // Elemen DOM
-        const photoContainer = document.getElementById('photoContainer');
-        const targetPhoto = document.getElementById('targetPhoto');
-        const fallbackImage = document.getElementById('fallbackImage');
-        const imageLoading = document.getElementById('imageLoading');
-        const dragInstruction = document.getElementById('dragInstruction');
-        const bulletSound = document.getElementById('bulletSound');
-        const laserSound = document.getElementById('laserSound');
-        const backgroundMusic = document.getElementById('backgroundMusic');
-        const shootBtn = document.getElementById('shootBtn');
-        const resetBtn = document.getElementById('resetBtn');
-        const bgMusicBtn = document.getElementById('bgMusicBtn');
-        const sfxBtn = document.getElementById('sfxBtn');
-        const bulletCountEl = document.getElementById('bulletCount');
-        const cutCountEl = document.getElementById('cutCount');
-        const damageCountEl = document.getElementById('damageCount');
-        const audioStatus = document.getElementById('audioStatus');
+        // ==================== KONFIGURASI ====================
+        const CONFIG = {
+            // URL foto yang akan dicoba (berurutan)
+            photoUrls: [
+                // Coba URL asli (tanpa /raw)
+                "https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/muka.jpg",
+                // Coba dengan proxy CORS
+                "https://corsproxy.io/?https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/muka.jpg",
+                // URL alternatif lain
+                "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+                // Foto placeholder wajah
+                "https://images.unsplash.com/photo-1494790108755-2616b786d4d7?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80"
+            ],
+            
+            // URL audio dengan fallback
+            bulletSoundUrls: [
+                "https://assets.mixkit.co/sfx/preview/mixkit-gun-pistol-shot-1669.mp3",
+                "https://www.soundjay.com/buttons/beep-07.wav"
+            ],
+            
+            laserSoundUrls: [
+                "https://assets.mixkit.co/sfx/preview/mixkit-laser-gun-shot-1678.mp3",
+                "https://www.soundjay.com/buttons/beep-08.wav"
+            ],
+            
+            bgMusicUrls: [
+                "https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3",
+                "https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3"
+            ]
+        };
         
-        // Cek dan perbaiki URL foto
-        const photoUrls = [
-            "https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/muka.jpg",
-            "https://github.com/miyamurajo-bot/hit_me/raw/main/muka.jpg",
-            "https://i.imgur.com/7QcIY9j.jpg", // Fallback image
-            "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
-        ];
-        
-        // Array sumber audio cadangan
-        const bulletSoundUrls = [
-            "https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/m4a1_single-kibblesbob-8540445.mp3",
-            "https://github.com/miyamurajo-bot/hit_me/raw/main/m4a1_single-kibblesbob-8540445.mp3",
-            "https://assets.mixkit.co/sfx/preview/mixkit-gun-pistol-shot-1669.mp3",
-            "https://www.soundjay.com/buttons/beep-07.wav"
-        ];
-        
-        const laserSoundUrls = [
-            "https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/billy-idol-rebel-yell-guitar-track.mp3",
-            "https://github.com/miyamurajo-bot/hit_me/raw/main/billy-idol-rebel-yell-guitar-track.mp3",
-            "https://assets.mixkit.co/sfx/preview/mixkit-laser-gun-shot-1678.mp3",
-            "https://www.soundjay.com/buttons/beep-08.wav"
-        ];
-        
-        const bgMusicUrls = [
-            "https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/game-gaming-minecraft-background-music-377647.mp3",
-            "https://github.com/miyamurajo-bot/hit_me/raw/main/game-gaming-minecraft-background-music-377647.mp3",
-            "https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3",
-            "https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3"
-        ];
-        
-        // Variabel game
+        // ==================== VARIABEL GLOBAL ====================
+        let gameInitialized = false;
+        let currentPhoto = null;
         let bulletCount = 0;
         let cutCount = 0;
         let damageCount = 0;
@@ -552,22 +528,83 @@
         let bgMusicEnabled = true;
         let sfxEnabled = true;
         let cutPieces = [];
-        let currentPhotoUrl = photoUrls[0];
-        let currentBulletSoundIndex = 0;
-        let currentLaserSoundIndex = 0;
-        let currentBgMusicIndex = 0;
         let audioInitialized = false;
         
-        // Fungsi untuk menampilkan status audio
-        function showAudioStatus(message, isError = false) {
-            audioStatus.textContent = message;
-            audioStatus.style.color = isError ? '#ff4757' : '#70a1ff';
-            audioStatus.style.display = 'block';
-            
-            // Sembunyikan setelah 3 detik
-            setTimeout(() => {
-                audioStatus.style.display = 'none';
-            }, 3000);
+        // ==================== ELEMEN DOM ====================
+        const elements = {
+            photoContainer: document.getElementById('photoContainer'),
+            imageLoading: document.getElementById('imageLoading'),
+            loadProgressBar: document.getElementById('loadProgressBar'),
+            loadStatus: document.getElementById('loadStatus'),
+            dragInstruction: document.getElementById('dragInstruction'),
+            bulletCountEl: document.getElementById('bulletCount'),
+            cutCountEl: document.getElementById('cutCount'),
+            damageCountEl: document.getElementById('damageCount'),
+            shootBtn: document.getElementById('shootBtn'),
+            resetBtn: document.getElementById('resetBtn'),
+            bgMusicBtn: document.getElementById('bgMusicBtn'),
+            sfxBtn: document.getElementById('sfxBtn'),
+            debugInfo: document.getElementById('debugInfo'),
+            debugToggle: document.getElementById('debugToggle')
+        };
+        
+        // ==================== ELEMEN AUDIO ====================
+        const audioElements = {
+            bulletSound: new Audio(),
+            laserSound: new Audio(),
+            backgroundMusic: new Audio()
+        };
+        
+        // ==================== FUNGSI UTAMA ====================
+        
+        // Fungsi untuk menampilkan debug info
+        function debugLog(message) {
+            console.log(message);
+            elements.debugInfo.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
         }
         
-        // Fungsi untuk memuat foto fallback jika
+        // Fungsi untuk membuat gambar dengan fallback
+        function createGameImage() {
+            debugLog("Memulai proses loading gambar...");
+            
+            // Buat elemen gambar
+            const img = document.createElement('img');
+            img.className = 'target-photo';
+            img.alt = 'Target';
+            
+            // Tambah event listeners untuk interaksi (akan diaktifkan nanti)
+            img.addEventListener('click', handleShoot);
+            img.addEventListener('mousedown', startDrag);
+            img.addEventListener('touchstart', startDragTouch, { passive: false });
+            img.addEventListener('mousemove', drag);
+            img.addEventListener('touchmove', dragTouch, { passive: false });
+            img.addEventListener('mouseup', endDrag);
+            img.addEventListener('touchend', endDrag);
+            img.addEventListener('contextmenu', e => e.preventDefault());
+            
+            // Tambah ke container
+            elements.photoContainer.appendChild(img);
+            
+            return img;
+        }
+        
+        // Fungsi untuk memuat gambar dengan retry
+        async function loadImageWithRetry(imgElement, urlIndex = 0) {
+            if (urlIndex >= CONFIG.photoUrls.length) {
+                debugLog("Semua URL gagal, membuat gambar fallback...");
+                createFallbackImage(imgElement);
+                return false;
+            }
+            
+            const url = CONFIG.photoUrls[urlIndex];
+            debugLog(`Mencoba memuat gambar dari: ${url}`);
+            
+            // Update status loading
+            elements.loadStatus.textContent = `Mencoba sumber ${urlIndex + 1}/${CONFIG.photoUrls.length}...`;
+            elements.loadProgressBar.style.width = `${(urlIndex / CONFIG.photoUrls.length) * 100}%`;
+            
+            return new Promise((resolve) => {
+                imgElement.src = url;
+                imgElement.onload = () => {
+                    debugLog(`✅ Gambar berhasil dimuat dari: ${url}`);
+                    elements.loadStatus.
