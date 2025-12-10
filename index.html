@@ -280,6 +280,11 @@
             transform: scale(1.1);
         }
         
+        .audio-btn.active {
+            background: rgba(255, 71, 87, 0.8);
+            box-shadow: 0 0 10px #ff4757;
+        }
+        
         .drag-instruction {
             position: absolute;
             top: 50%;
@@ -304,6 +309,37 @@
             font-size: 2rem;
             color: #ffa502;
             margin-bottom: 10px;
+        }
+        
+        .image-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 1.2rem;
+            z-index: 5;
+        }
+        
+        .fallback-image {
+            display: none;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .audio-status {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 10px;
+            border: 2px solid #70a1ff;
+            font-size: 0.8rem;
+            max-width: 200px;
+            z-index: 99;
+            display: none;
         }
         
         @media (max-width: 768px) {
@@ -334,6 +370,12 @@
                 flex-direction: column;
                 align-items: center;
                 gap: 10px;
+            }
+            
+            .audio-status {
+                bottom: 80px;
+                font-size: 0.7rem;
+                max-width: 150px;
             }
         }
     </style>
@@ -366,8 +408,16 @@
             </div>
             
             <div class="photo-container" id="photoContainer">
-                <img src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/raw/main/muka.jpg" alt="Target" class="target-photo" id="targetPhoto">
-                <!-- Elemen untuk efek tembak dan laser akan ditambahkan di sini -->
+                <div class="image-loading" id="imageLoading">Memuat foto...</div>
+                <img src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/muka.jpg" 
+                     alt="Target" 
+                     class="target-photo" 
+                     id="targetPhoto"
+                     onerror="loadFallbackImage()">
+                <img src="https://i.imgur.com/7QcIY9j.jpg" 
+                     alt="Fallback Target" 
+                     class="fallback-image" 
+                     id="fallbackImage">
             </div>
         </div>
         
@@ -398,10 +448,11 @@
         </div>
         
         <div class="audio-controls">
-            <button class="audio-btn" id="bgMusicBtn">
+            <div class="audio-status" id="audioStatus">Status audio akan muncul di sini</div>
+            <button class="audio-btn active" id="bgMusicBtn">
                 <i class="fas fa-music"></i>
             </button>
-            <button class="audio-btn" id="sfxBtn">
+            <button class="audio-btn active" id="sfxBtn">
                 <i class="fas fa-volume-up"></i>
             </button>
         </div>
@@ -409,21 +460,44 @@
     
     <!-- Audio elements -->
     <audio id="bulletSound" preload="auto">
-        <source src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/raw/main/m4a1_single-kibblesbob-8540445.mp3" type="audio/mpeg">
+        <!-- Sumber utama -->
+        <source src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/m4a1_single-kibblesbob-8540445.mp3" type="audio/mpeg">
+        <!-- Alternatif 1: URL tanpa /raw -->
+        <source src="https://github.com/miyamurajo-bot/hit_me/raw/main/m4a1_single-kibblesbob-8540445.mp3" type="audio/mpeg">
+        <!-- Alternatif 2: File audio dari sumber lain -->
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-gun-pistol-shot-1669.mp3" type="audio/mpeg">
+        <!-- Alternatif 3: Audio placeholder -->
+        <source src="https://www.soundjay.com/buttons/beep-07.wav" type="audio/wav">
     </audio>
     
     <audio id="laserSound" preload="auto">
-        <source src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/raw/main/billy-idol-rebel-yell-guitar-track.mp3" type="audio/mpeg">
+        <!-- Sumber utama -->
+        <source src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/billy-idol-rebel-yell-guitar-track.mp3" type="audio/mpeg">
+        <!-- Alternatif 1: URL tanpa /raw -->
+        <source src="https://github.com/miyamurajo-bot/hit_me/raw/main/billy-idol-rebel-yell-guitar-track.mp3" type="audio/mpeg">
+        <!-- Alternatif 2: File audio dari sumber lain -->
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-laser-gun-shot-1678.mp3" type="audio/mpeg">
+        <!-- Alternatif 3: Audio placeholder -->
+        <source src="https://www.soundjay.com/buttons/beep-08.wav" type="audio/wav">
     </audio>
     
     <audio id="backgroundMusic" loop preload="auto">
-        <source src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/raw/main/game-gaming-minecraft-background-music-377647.mp3" type="audio/mpeg">
+        <!-- Sumber utama -->
+        <source src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/game-gaming-minecraft-background-music-377647.mp3" type="audio/mpeg">
+        <!-- Alternatif 1: URL tanpa /raw -->
+        <source src="https://github.com/miyamurajo-bot/hit_me/raw/main/game-gaming-minecraft-background-music-377647.mp3" type="audio/mpeg">
+        <!-- Alternatif 2: File audio dari sumber lain -->
+        <source src="https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3" type="audio/mpeg">
+        <!-- Alternatif 3: Musik game lain -->
+        <source src="https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3" type="audio/mpeg">
     </audio>
 
     <script>
         // Elemen DOM
         const photoContainer = document.getElementById('photoContainer');
         const targetPhoto = document.getElementById('targetPhoto');
+        const fallbackImage = document.getElementById('fallbackImage');
+        const imageLoading = document.getElementById('imageLoading');
         const dragInstruction = document.getElementById('dragInstruction');
         const bulletSound = document.getElementById('bulletSound');
         const laserSound = document.getElementById('laserSound');
@@ -435,6 +509,37 @@
         const bulletCountEl = document.getElementById('bulletCount');
         const cutCountEl = document.getElementById('cutCount');
         const damageCountEl = document.getElementById('damageCount');
+        const audioStatus = document.getElementById('audioStatus');
+        
+        // Cek dan perbaiki URL foto
+        const photoUrls = [
+            "https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/muka.jpg",
+            "https://github.com/miyamurajo-bot/hit_me/raw/main/muka.jpg",
+            "https://i.imgur.com/7QcIY9j.jpg", // Fallback image
+            "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80"
+        ];
+        
+        // Array sumber audio cadangan
+        const bulletSoundUrls = [
+            "https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/m4a1_single-kibblesbob-8540445.mp3",
+            "https://github.com/miyamurajo-bot/hit_me/raw/main/m4a1_single-kibblesbob-8540445.mp3",
+            "https://assets.mixkit.co/sfx/preview/mixkit-gun-pistol-shot-1669.mp3",
+            "https://www.soundjay.com/buttons/beep-07.wav"
+        ];
+        
+        const laserSoundUrls = [
+            "https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/billy-idol-rebel-yell-guitar-track.mp3",
+            "https://github.com/miyamurajo-bot/hit_me/raw/main/billy-idol-rebel-yell-guitar-track.mp3",
+            "https://assets.mixkit.co/sfx/preview/mixkit-laser-gun-shot-1678.mp3",
+            "https://www.soundjay.com/buttons/beep-08.wav"
+        ];
+        
+        const bgMusicUrls = [
+            "https://raw.githubusercontent.com/miyamurajo-bot/hit_me/main/game-gaming-minecraft-background-music-377647.mp3",
+            "https://github.com/miyamurajo-bot/hit_me/raw/main/game-gaming-minecraft-background-music-377647.mp3",
+            "https://assets.mixkit.co/music/preview/mixkit-game-show-suspense-waiting-667.mp3",
+            "https://assets.mixkit.co/music/preview/mixkit-game-level-music-689.mp3"
+        ];
         
         // Variabel game
         let bulletCount = 0;
@@ -447,152 +552,22 @@
         let bgMusicEnabled = true;
         let sfxEnabled = true;
         let cutPieces = [];
+        let currentPhotoUrl = photoUrls[0];
+        let currentBulletSoundIndex = 0;
+        let currentLaserSoundIndex = 0;
+        let currentBgMusicIndex = 0;
+        let audioInitialized = false;
         
-        // Inisialisasi game
-        function initGame() {
-            // Sembunyikan instruksi drag setelah beberapa detik
+        // Fungsi untuk menampilkan status audio
+        function showAudioStatus(message, isError = false) {
+            audioStatus.textContent = message;
+            audioStatus.style.color = isError ? '#ff4757' : '#70a1ff';
+            audioStatus.style.display = 'block';
+            
+            // Sembunyikan setelah 3 detik
             setTimeout(() => {
-                dragInstruction.style.display = 'none';
-            }, 5000);
-            
-            // Mulai background music
-            backgroundMusic.volume = 0.5;
-            backgroundMusic.play().catch(e => {
-                console.log("Autoplay diblokir, klik untuk memulai musik");
-            });
-            
-            // Event listeners untuk foto
-            targetPhoto.addEventListener('click', handleShoot);
-            targetPhoto.addEventListener('mousedown', startDrag);
-            targetPhoto.addEventListener('touchstart', startDragTouch);
-            targetPhoto.addEventListener('mousemove', drag);
-            targetPhoto.addEventListener('touchmove', dragTouch);
-            targetPhoto.addEventListener('mouseup', endDrag);
-            targetPhoto.addEventListener('touchend', endDrag);
-            
-            // Event listeners untuk tombol
-            shootBtn.addEventListener('click', () => {
-                // Tembak di tengah foto
-                const rect = targetPhoto.getBoundingClientRect();
-                const x = rect.left + rect.width / 2;
-                const y = rect.top + rect.height / 2;
-                handleShoot({clientX: x, clientY: y});
-            });
-            
-            resetBtn.addEventListener('click', resetPhoto);
-            bgMusicBtn.addEventListener('click', toggleBgMusic);
-            sfxBtn.addEventListener('click', toggleSfx);
-            
-            // Update statistik
-            updateStats();
+                audioStatus.style.display = 'none';
+            }, 3000);
         }
         
-        // Fungsi untuk menangani tembakan
-        function handleShoot(event) {
-            // Dapatkan posisi klik relatif terhadap foto
-            const rect = targetPhoto.getBoundingClientRect();
-            const x = event.clientX - rect.left;
-            const y = event.clientY - rect.top;
-            
-            // Pastikan klik berada di dalam foto
-            if (x < 0 || x > rect.width || y < 0 || y > rect.height) return;
-            
-            // Efek suara tembakan
-            if (sfxEnabled) {
-                bulletSound.currentTime = 0;
-                bulletSound.play();
-            }
-            
-            // Tambah jumlah peluru
-            bulletCount++;
-            
-            // Efek kilatan senjata (muzzle flash)
-            createMuzzleFlash(x, y);
-            
-            // Buat peluru yang bergerak
-            createBullet(x, y);
-            
-            // Buat lubang peluru
-            createBulletHole(x, y);
-            
-            // Buah efek percikan darah
-            createBloodSpatter(x, y);
-            
-            // Tambah kerusakan
-            damageCount += 0.5;
-            if (damageCount > 100) damageCount = 100;
-            
-            // Update statistik
-            updateStats();
-        }
-        
-        // Buat efek kilatan senjata
-        function createMuzzleFlash(x, y) {
-            const flash = document.createElement('div');
-            flash.className = 'muzzle-flash';
-            flash.style.left = (x - 20) + 'px';
-            flash.style.top = (y - 20) + 'px';
-            photoContainer.appendChild(flash);
-            
-            // Hapus setelah animasi selesai
-            setTimeout(() => {
-                flash.remove();
-            }, 100);
-        }
-        
-        // Buat peluru yang bergerak
-        function createBullet(x, y) {
-            const bullet = document.createElement('div');
-            bullet.className = 'bullet';
-            
-            // Tentukan arah peluru (dari luar layar ke titik klik)
-            const startX = Math.random() * window.innerWidth;
-            const startY = window.innerHeight + 50;
-            
-            bullet.style.left = startX + 'px';
-            bullet.style.top = startY + 'px';
-            document.body.appendChild(bullet);
-            
-            // Hitung durasi animasi berdasarkan jarak
-            const distance = Math.sqrt(Math.pow(startX - (x + photoContainer.offsetLeft), 2) + 
-                                      Math.pow(startY - (y + photoContainer.offsetTop), 2));
-            const duration = Math.min(distance / 1000, 0.8); // Maksimal 0.8 detik
-            
-            // Animasikan peluru
-            requestAnimationFrame(() => {
-                bullet.style.transition = `all ${duration}s linear`;
-                bullet.style.left = (x + photoContainer.offsetLeft - 5) + 'px';
-                bullet.style.top = (y + photoContainer.offsetTop - 5) + 'px';
-                
-                // Hapus peluru setelah mencapai target
-                setTimeout(() => {
-                    bullet.remove();
-                }, duration * 1000);
-            });
-        }
-        
-        // Buat lubang peluru
-        function createBulletHole(x, y) {
-            const hole = document.createElement('div');
-            hole.className = 'bullet-hole';
-            hole.style.left = (x - 15) + 'px';
-            hole.style.top = (y - 15) + 'px';
-            
-            // Rotasi acak untuk variasi
-            const rotation = Math.random() * 360;
-            hole.style.transform = `rotate(${rotation}deg)`;
-            
-            photoContainer.appendChild(hole);
-        }
-        
-        // Buat efek percikan darah
-        function createBloodSpatter(x, y) {
-            // Buat 3-5 percikan darah kecil
-            const spatterCount = 3 + Math.floor(Math.random() * 3);
-            
-            for (let i = 0; i < spatterCount; i++) {
-                const spatter = document.createElement('div');
-                spatter.className = 'blood-spatter';
-                
-                // Posisi acak di sekitar titik tembak
-              
+        // Fungsi untuk memuat foto fallback jika
