@@ -1,177 +1,598 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="id">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Shoot The Image</title>
-
-<style>
-    body {
-        margin: 0;
-        overflow: hidden;
-        background: #111;
-        height: 100vh;
-        width: 100vw;
-        cursor: crosshair;
-        user-select: none;
-        font-family: Arial, sans-serif;
-        color: white;
-        text-align: center;
-    }
-
-    .title-box {
-        position: absolute;
-        top: 5%;
-        width: 100%;
-        text-align: center;
-        font-size: 22px;
-        line-height: 1.4;
-        text-shadow: 0 0 10px #000;
-        pointer-events: none;
-    }
-
-    /* Target image */
-    .target {
-        position: absolute;
-        width: 200px;
-        height: auto;
-        left: 50%;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        transition: transform 0.1s;
-        -webkit-mask-image: none;
-        mask-image: none;
-    }
-
-    /* Bullet flash */
-    .bullet {
-        position: absolute;
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
-        background: yellow;
-        pointer-events: none;
-        animation: pop 0.2s linear forwards;
-    }
-
-    @keyframes pop {
-        0%   { transform: scale(1); opacity: 1; }
-        100% { transform: scale(3); opacity: 0; }
-    }
-
-    .hit {
-        animation: shake 0.15s;
-    }
-
-    @keyframes shake {
-        0%   { transform: translate(-50%, -50%) rotate(0deg); }
-        25%  { transform: translate(-48%, -52%) rotate(-3deg); }
-        50%  { transform: translate(-50%, -50%) rotate(3deg); }
-        75%  { transform: translate(-52%, -48%) rotate(-2deg); }
-        100% { transform: translate(-50%, -50%) rotate(0deg); }
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hit Me When You Are Mad, Fineshytt</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            font-family: 'Arial Black', 'Arial Bold', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        header {
+            text-align: center;
+            padding: 15px 0;
+            border-bottom: 3px solid #ff4757;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.3);
+        }
+        
+        h1 {
+            font-size: 3rem;
+            color: #ff4757;
+            text-shadow: 3px 3px 0 #000;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #70a1ff;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+        
+        .instructions {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .instruction-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+        
+        .instruction-item i {
+            color: #ffa502;
+            font-size: 1.5rem;
+        }
+        
+        .game-area {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .photo-container {
+            position: relative;
+            width: 500px;
+            height: 500px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 30px rgba(255, 71, 87, 0.5);
+            border: 5px solid #ff4757;
+            background-color: #000;
+        }
+        
+        .target-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: crosshair;
+            transition: transform 0.1s;
+        }
+        
+        .bullet-hole {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30"><circle cx="15" cy="15" r="12" fill="black"/><circle cx="15" cy="15" r="8" fill="%23505050"/><circle cx="15" cy="15" r="4" fill="%23202020"/></svg>');
+            background-size: contain;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .blood-spatter {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><path d="M20,5 Q25,0 30,10 Q35,20 25,25 Q20,30 15,25 Q5,20 10,10 Q15,0 20,5Z" fill="%23ff4757" opacity="0.8"/></svg>');
+            background-size: contain;
+            pointer-events: none;
+            z-index: 9;
+        }
+        
+        .laser-line {
+            position: absolute;
+            height: 4px;
+            background: linear-gradient(90deg, rgba(255, 71, 87, 0) 0%, rgba(255, 71, 87, 1) 50%, rgba(255, 71, 87, 0) 100%);
+            box-shadow: 0 0 10px #ff4757, 0 0 20px #ff4757;
+            pointer-events: none;
+            z-index: 8;
+            transform-origin: 0 0;
+        }
+        
+        .cut-piece {
+            position: absolute;
+            background-size: 500px 500px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            border-radius: 5px;
+            overflow: hidden;
+            z-index: 7;
+            transition: transform 2s linear, top 2s cubic-bezier(0.55, 0.085, 0.68, 0.53);
+        }
+        
+        .cut-piece::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: inherit;
+            background-size: 500px 500px;
+        }
+        
+        .bullet {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle, #ffd700 30%, #ffa500 100%);
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ffd700;
+            pointer-events: none;
+            z-index: 20;
+        }
+        
+        .muzzle-flash {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, rgba(255, 255, 200, 0.9) 0%, rgba(255, 200, 0, 0.5) 70%, transparent 100%);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 25;
+            animation: flash 0.1s forwards;
+        }
+        
+        @keyframes flash {
+            0% { opacity: 1; transform: scale(0.5); }
+            100% { opacity: 0; transform: scale(1.5); }
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            border: 2px solid #70a1ff;
+        }
+        
+        .stat-box {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            color: #ffa502;
+            font-weight: bold;
+        }
+        
+        .stat-label {
+            font-size: 1rem;
+            color: #70a1ff;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        button {
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        #shootBtn {
+            background: linear-gradient(to right, #ff4757, #ff6b81);
+            color: white;
+        }
+        
+        #shootBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #ff4757;
+        }
+        
+        #resetBtn {
+            background: linear-gradient(to right, #3742fa, #5352ed);
+            color: white;
+        }
+        
+        #resetBtn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px #3742fa;
+        }
+        
+        .audio-controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 100;
+        }
+        
+        .audio-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid #70a1ff;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        
+        .audio-btn:hover {
+            background: rgba(255, 71, 87, 0.8);
+            transform: scale(1.1);
+        }
+        
+        .drag-instruction {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px dashed #ffa502;
+            z-index: 30;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+        }
+        
+        .drag-instruction i {
+            font-size: 2rem;
+            color: #ffa502;
+            margin-bottom: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
+            
+            .photo-container {
+                width: 95vw;
+                height: 95vw;
+                max-width: 400px;
+                max-height: 400px;
+            }
+            
+            .cut-piece {
+                background-size: contain;
+            }
+            
+            .instructions {
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+            }
+        }
+    </style>
 </head>
-
 <body>
+    <div class="container">
+        <header>
+            <h1>Hit Me When You Are Mad, Fineshytt</h1>
+            <p class="subtitle">Tap tap layar untuk tembak biji, dan seret layar di foto untuk menggunakan laser biji.</p>
+            <div class="instructions">
+                <div class="instruction-item">
+                    <i class="fas fa-mouse-pointer"></i>
+                    <span>Klik/Tap untuk menembak</span>
+                </div>
+                <div class="instruction-item">
+                    <i class="fas fa-expand-alt"></i>
+                    <span>Drag untuk memotong dengan laser</span>
+                </div>
+                <div class="instruction-item">
+                    <i class="fas fa-volume-up"></i>
+                    <span>Suara akan diputar otomatis</span>
+                </div>
+            </div>
+        </header>
+        
+        <div class="game-area">
+            <div class="drag-instruction" id="dragInstruction">
+                <i class="fas fa-arrows-alt-h"></i>
+                <p>Drag di foto untuk memotong dengan laser!</p>
+            </div>
+            
+            <div class="photo-container" id="photoContainer">
+                <img src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/raw/main/muka.jpg" alt="Target" class="target-photo" id="targetPhoto">
+                <!-- Elemen untuk efek tembak dan laser akan ditambahkan di sini -->
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-value" id="bulletCount">0</div>
+                <div class="stat-label">Peluru Ditembakkan</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="cutCount">0</div>
+                <div class="stat-label">Potongan Laser</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-value" id="damageCount">0%</div>
+                <div class="stat-label">Kerusakan Foto</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="shootBtn">
+                <i class="fas fa-crosshairs"></i>
+                TEMBAK!
+            </button>
+            <button id="resetBtn">
+                <i class="fas fa-redo"></i>
+                RESET FOTO
+            </button>
+        </div>
+        
+        <div class="audio-controls">
+            <button class="audio-btn" id="bgMusicBtn">
+                <i class="fas fa-music"></i>
+            </button>
+            <button class="audio-btn" id="sfxBtn">
+                <i class="fas fa-volume-up"></i>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Audio elements -->
+    <audio id="bulletSound" preload="auto">
+        <source src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/raw/main/m4a1_single-kibblesbob-8540445.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="laserSound" preload="auto">
+        <source src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/raw/main/billy-idol-rebel-yell-guitar-track.mp3" type="audio/mpeg">
+    </audio>
+    
+    <audio id="backgroundMusic" loop preload="auto">
+        <source src="https://raw.githubusercontent.com/miyamurajo-bot/hit_me/raw/main/game-gaming-minecraft-background-music-377647.mp3" type="audio/mpeg">
+    </audio>
 
-<div class="title-box">
-    <div>hit ur fineshytt if u are mad</div>
-    <div>sentuh untuk tembk bijinya</div>
-    <div>sentuh seret untuk menggunakan laser biji</div>
-</div>
-
-<img src="https://miyamurajo-bot.github.io/hit_me/muka.jpg" class="target" id="target">
-
-<script>
-    const target = document.getElementById("target");
-
-    // SOUND
-    function playShoot() {
-        const audio = new Audio("https://raw.githubusercontent.com/miyamurajo-bot/hit_me/raw/main/m4a1_single-kibblesbob-8540445.mp3");
-        audio.type = "audio/mpeg";
-        audio.volume = 0.4;
-        audio.play().catch(e => console.log("Audio blocked:", e));
-    }
-
-    // BULLET EFFECT
-    function spawnBullet(x, y) {
-        const bullet = document.createElement("div");
-        bullet.className = "bullet";
-        bullet.style.left = x + "px";
-        bullet.style.top = y + "px";
-        document.body.appendChild(bullet);
-        setTimeout(() => bullet.remove(), 200);
-    }
-
-    // SHOOT LOGIC
-    function shoot(e) {
-        const x = e.clientX;
-        const y = e.clientY;
-
-        spawnBullet(x, y);
-        playShoot();
-
-        const rect = target.getBoundingClientRect();
-        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-            target.classList.add("hit");
-            setTimeout(() => target.classList.remove("hit"), 150);
+    <script>
+        // Elemen DOM
+        const photoContainer = document.getElementById('photoContainer');
+        const targetPhoto = document.getElementById('targetPhoto');
+        const dragInstruction = document.getElementById('dragInstruction');
+        const bulletSound = document.getElementById('bulletSound');
+        const laserSound = document.getElementById('laserSound');
+        const backgroundMusic = document.getElementById('backgroundMusic');
+        const shootBtn = document.getElementById('shootBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const bgMusicBtn = document.getElementById('bgMusicBtn');
+        const sfxBtn = document.getElementById('sfxBtn');
+        const bulletCountEl = document.getElementById('bulletCount');
+        const cutCountEl = document.getElementById('cutCount');
+        const damageCountEl = document.getElementById('damageCount');
+        
+        // Variabel game
+        let bulletCount = 0;
+        let cutCount = 0;
+        let damageCount = 0;
+        let isDragging = false;
+        let dragStart = {x: 0, y: 0};
+        let dragEnd = {x: 0, y: 0};
+        let laserLine = null;
+        let bgMusicEnabled = true;
+        let sfxEnabled = true;
+        let cutPieces = [];
+        
+        // Inisialisasi game
+        function initGame() {
+            // Sembunyikan instruksi drag setelah beberapa detik
+            setTimeout(() => {
+                dragInstruction.style.display = 'none';
+            }, 5000);
+            
+            // Mulai background music
+            backgroundMusic.volume = 0.5;
+            backgroundMusic.play().catch(e => {
+                console.log("Autoplay diblokir, klik untuk memulai musik");
+            });
+            
+            // Event listeners untuk foto
+            targetPhoto.addEventListener('click', handleShoot);
+            targetPhoto.addEventListener('mousedown', startDrag);
+            targetPhoto.addEventListener('touchstart', startDragTouch);
+            targetPhoto.addEventListener('mousemove', drag);
+            targetPhoto.addEventListener('touchmove', dragTouch);
+            targetPhoto.addEventListener('mouseup', endDrag);
+            targetPhoto.addEventListener('touchend', endDrag);
+            
+            // Event listeners untuk tombol
+            shootBtn.addEventListener('click', () => {
+                // Tembak di tengah foto
+                const rect = targetPhoto.getBoundingClientRect();
+                const x = rect.left + rect.width / 2;
+                const y = rect.top + rect.height / 2;
+                handleShoot({clientX: x, clientY: y});
+            });
+            
+            resetBtn.addEventListener('click', resetPhoto);
+            bgMusicBtn.addEventListener('click', toggleBgMusic);
+            sfxBtn.addEventListener('click', toggleSfx);
+            
+            // Update statistik
+            updateStats();
         }
-    }
-
-    // AUTO FIRE HOLD
-    let autoFire;
-    document.addEventListener("mousedown", (e) => {
-        shoot(e);
-        autoFire = setInterval(() => shoot(e), 15);
-    });
-    document.addEventListener("mouseup", () => clearInterval(autoFire));
-    document.addEventListener("click", shoot);
-
-    // ===== LASER CUTTING SYSTEM =====
-
-    let isLaser = false;
-    let laserPath = "";  // SVG path untuk mask
-
-    function updateLaserMask() {
-        target.style.webkitMaskImage = `path("${laserPath}")`;
-        target.style.maskImage = `path("${laserPath}")`;
-    }
-
-    document.addEventListener("touchstart", startLaser);
-    document.addEventListener("touchmove", drawLaser);
-    document.addEventListener("touchend", endLaser);
-
-    document.addEventListener("mousedown", startLaser);
-    document.addEventListener("mousemove", drawLaser);
-    document.addEventListener("mouseup", endLaser);
-
-    function startLaser(e) {
-        const x = (e.touches ? e.touches[0].clientX : e.clientX);
-        const y = (e.touches ? e.touches[0].clientY : e.clientY);
-
-        const rect = target.getBoundingClientRect();
-        if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
-            isLaser = true;
-            laserPath = `M ${x} ${y}`;
-            updateLaserMask();
+        
+        // Fungsi untuk menangani tembakan
+        function handleShoot(event) {
+            // Dapatkan posisi klik relatif terhadap foto
+            const rect = targetPhoto.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+            
+            // Pastikan klik berada di dalam foto
+            if (x < 0 || x > rect.width || y < 0 || y > rect.height) return;
+            
+            // Efek suara tembakan
+            if (sfxEnabled) {
+                bulletSound.currentTime = 0;
+                bulletSound.play();
+            }
+            
+            // Tambah jumlah peluru
+            bulletCount++;
+            
+            // Efek kilatan senjata (muzzle flash)
+            createMuzzleFlash(x, y);
+            
+            // Buat peluru yang bergerak
+            createBullet(x, y);
+            
+            // Buat lubang peluru
+            createBulletHole(x, y);
+            
+            // Buah efek percikan darah
+            createBloodSpatter(x, y);
+            
+            // Tambah kerusakan
+            damageCount += 0.5;
+            if (damageCount > 100) damageCount = 100;
+            
+            // Update statistik
+            updateStats();
         }
-    }
-
-    function drawLaser(e) {
-        if (!isLaser) return;
-
-        const x = (e.touches ? e.touches[0].clientX : e.clientX);
-        const y = (e.touches ? e.touches[0].clientY : e.clientY);
-
-        laserPath += ` L ${x} ${y}`;
-        updateLaserMask();
-    }
-
-    function endLaser() {
-        isLaser = false;
-    }
-</script>
-
-</body>
-</html>
+        
+        // Buat efek kilatan senjata
+        function createMuzzleFlash(x, y) {
+            const flash = document.createElement('div');
+            flash.className = 'muzzle-flash';
+            flash.style.left = (x - 20) + 'px';
+            flash.style.top = (y - 20) + 'px';
+            photoContainer.appendChild(flash);
+            
+            // Hapus setelah animasi selesai
+            setTimeout(() => {
+                flash.remove();
+            }, 100);
+        }
+        
+        // Buat peluru yang bergerak
+        function createBullet(x, y) {
+            const bullet = document.createElement('div');
+            bullet.className = 'bullet';
+            
+            // Tentukan arah peluru (dari luar layar ke titik klik)
+            const startX = Math.random() * window.innerWidth;
+            const startY = window.innerHeight + 50;
+            
+            bullet.style.left = startX + 'px';
+            bullet.style.top = startY + 'px';
+            document.body.appendChild(bullet);
+            
+            // Hitung durasi animasi berdasarkan jarak
+            const distance = Math.sqrt(Math.pow(startX - (x + photoContainer.offsetLeft), 2) + 
+                                      Math.pow(startY - (y + photoContainer.offsetTop), 2));
+            const duration = Math.min(distance / 1000, 0.8); // Maksimal 0.8 detik
+            
+            // Animasikan peluru
+            requestAnimationFrame(() => {
+                bullet.style.transition = `all ${duration}s linear`;
+                bullet.style.left = (x + photoContainer.offsetLeft - 5) + 'px';
+                bullet.style.top = (y + photoContainer.offsetTop - 5) + 'px';
+                
+                // Hapus peluru setelah mencapai target
+                setTimeout(() => {
+                    bullet.remove();
+                }, duration * 1000);
+            });
+        }
+        
+        // Buat lubang peluru
+        function createBulletHole(x, y) {
+            const hole = document.createElement('div');
+            hole.className = 'bullet-hole';
+            hole.style.left = (x - 15) + 'px';
+            hole.style.top = (y - 15) + 'px';
+            
+            // Rotasi acak untuk variasi
+            const rotation = Math.random() * 360;
+            hole.style.transform = `rotate(${rotation}deg)`;
+            
+            photoContainer.appendChild(hole);
+        }
+        
+        // Buat efek percikan darah
+        function createBloodSpatter(x, y) {
+            // Buat 3-5 percikan darah kecil
+            const spatterCount = 3 + Math.floor(Math.random() * 3);
+            
+            for (let i = 0; i < spatterCount; i++) {
+                const spatter = document.createElement('div');
+                spatter.className = 'blood-spatter';
+                
+                // Posisi acak di sekitar titik tembak
+              
